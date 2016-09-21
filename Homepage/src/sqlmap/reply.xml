@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+ 
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="reply">
+
+     <select id="rcount" parameterType="int" resultType="int">
+     SELECT count(*) FROM myreply
+     WHERE bbsnum = #{bbsnum}
+    </select>
+
+
+	<insert id="create" parameterType="replyDTO">
+		<selectKey keyProperty="rnum" resultType="int" order="BEFORE">
+		<!-- after하면 01234 - int의 초기값 - 다음에 + 1이니까 0 - 1 - 2 - 3
+		// before는 1234 - 만든 다음에 - 값을 넣으니까 1 - 2 - 3 - 4
+		selectkey의 값을 언제 만들 거냐는 소리임
+		 -->
+		 
+			select nvl(max(rnum),0)+1 from myreply
+		</selectKey>
+		
+		insert into myreply(rnum, content, regdate, id, bbsnum)
+		values(#{rnum},
+		#{content}, sysdate, #{id}, #{bbsnum})
+	</insert>
+
+	<select id="read" parameterType="int" resultType="replyDTO">
+		select * from
+		myreply
+		where rnum = #{rnum}
+	</select>
+
+	<update id="update" parameterType="replyDTO">
+		update myreply
+		set content =
+		#{content}
+		where rnum = #{rnum}
+
+	</update>
+
+	<delete id="delete" parameterType="int">
+		delete from myreply
+		where rnum =
+		#{rnum}
+	</delete>
+
+	<!-- 글이 삭제될 때 모든 댓글을 지우는 것 -->
+	<delete id="bdelete" parameterType="int">
+		delete from myreply
+		where bbsnum
+		= #{bbsnum}
+	</delete>
+	
+	<select id="list" parameterType="Map" resultType="replyDTO">
+		select rnum, content, to_char(regdate,'yyyy-mm-dd') regdate, id,
+		bbsnum, r
+		FROM(
+		select rnum, content, regdate, id, bbsnum, rownum r
+		FROM(
+		select rnum, content, regdate, id, bbsnum
+		from myreply
+		where bbsnum =
+		#{bbsnum}
+		order by rnum DESC
+		)
+	<![CDATA[
+	)WHERE r >= #{sno} and r <= #{eno}
+	]]>
+	</select>
+
+	<select id="total" resultType="int" parameterType="int">
+		select
+		count(*) from myreply
+		where bbsnum=#{bbsnum}
+	</select>
+
+</mapper>
